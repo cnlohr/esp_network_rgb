@@ -97,7 +97,7 @@ void ICACHE_FLASH_ATTR user_init(void)
 {
 	uart_init(BIT_RATE_115200, BIT_RATE_115200);
 	printf( "DEFAULT: %d\n", wifi_get_opmode_default() );
-	uart0_sendStr("\r\nesp82XX Web-GUI\r\n" VERSSTR "\b");
+	uart0_sendStr("\r\nesp82XX Web-GUI\r\n" VERSSTR "\b\r\n");
 
 //Uncomment this to force a system restore.
 //	system_restore();
