@@ -11,6 +11,7 @@
 #include "commonservices.h"
 #include <mdns.h>
 #include "vars.h"
+#include <pwm.h>
 #include "pattern.h"
 
 #define procTaskPrio        0
@@ -44,6 +45,11 @@ static void ICACHE_FLASH_ATTR procTask(os_event_t *events)
 
 void ws2812_push( uint8_t * data, int count )
 {
+		pwm_set_duty(data[0]<<7, 0);
+		pwm_set_duty(data[1]<<7, 1);
+		pwm_set_duty(data[2]<<7, 2);
+		pwm_set_duty(data[3]<<7, 3);
+		pwm_start();
 }
 
 //Display pattern on connected LEDs
@@ -63,10 +69,50 @@ static void ICACHE_FLASH_ATTR patternTimer(void *arg)
     ws2812_push( (char*)last_leds, 3*UsrCfg->nled);
 }
 
+uint32 pwm_duty_init[4] = {100,100,100,100};
+
+#define PWM_0_OUT_IO_MUX PERIPHS_IO_MUX_MTDI_U
+#define PWM_0_OUT_IO_NUM 12
+#define PWM_0_OUT_IO_FUNC  FUNC_GPIO12
+
+#define PWM_1_OUT_IO_MUX PERIPHS_IO_MUX_MTMS_U
+#define PWM_1_OUT_IO_NUM 14
+#define PWM_1_OUT_IO_FUNC  FUNC_GPIO14
+
+#define PWM_2_OUT_IO_MUX PERIPHS_IO_MUX_MTCK_U
+#define PWM_2_OUT_IO_NUM 13
+#define PWM_2_OUT_IO_FUNC  FUNC_GPIO13
+
+#define PWM_3_OUT_IO_MUX PERIPHS_IO_MUX_GPIO2_U
+#define PWM_3_OUT_IO_NUM 2
+#define PWM_3_OUT_IO_FUNC  FUNC_GPIO2
+
+uint32 io_info[][3] = {
+  {PWM_0_OUT_IO_MUX,PWM_0_OUT_IO_FUNC,PWM_0_OUT_IO_NUM},
+  {PWM_1_OUT_IO_MUX,PWM_1_OUT_IO_FUNC,PWM_1_OUT_IO_NUM},
+  {PWM_2_OUT_IO_MUX,PWM_2_OUT_IO_FUNC,PWM_2_OUT_IO_NUM},
+  {PWM_3_OUT_IO_MUX,PWM_3_OUT_IO_FUNC,PWM_3_OUT_IO_NUM},
+};
 
 //Timer event.
 static void ICACHE_FLASH_ATTR myTimer(void *arg)
 {
+	static int did_init;
+	printf( "." );
+	if( !did_init )
+	{
+
+		PIN_FUNC_SELECT(PWM_0_OUT_IO_MUX, PWM_0_OUT_IO_FUNC); 	// Set GPIO2 function
+		gpio_output_set(0, 12, 12, 0); 			// Set GPIO2 low output
+
+		printf( "--> %d\n", get_pwm_version() );
+		pwm_init(1024, pwm_duty_init, 4, io_info);
+		set_pwm_debug_en(0);//disable debug print in pwm driver
+		did_init = 1;
+		pwm_set_period(1024);
+		pwm_start();
+
+	}
 	CSTick( 1 );
 }
 
@@ -96,11 +142,12 @@ void ICACHE_FLASH_ATTR charrx( uint8_t c ) {/*Called from UART.*/}
 void ICACHE_FLASH_ATTR user_init(void)
 {
 	uart_init(BIT_RATE_115200, BIT_RATE_115200);
-	printf( "DEFAULT: %d\n", wifi_get_opmode_default() );
+
 	uart0_sendStr("\r\nesp82XX Web-GUI\r\n" VERSSTR "\b\r\n");
 
 //Uncomment this to force a system restore.
 //	system_restore();
+
 
 	CSSettingsLoad( 0 );
     CSPreInit();
@@ -142,9 +189,6 @@ void ICACHE_FLASH_ATTR user_init(void)
 	//ws2812_init();
 
 	printf( "Boot Ok.\n" );
-
-//	wifi_set_sleep_type(LIGHT_SLEEP_T);
-//	wifi_fpm_set_sleep_type(LIGHT_SLEEP_T);
 
 	system_os_post(procTaskPrio, 0, 0 );
 }

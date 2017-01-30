@@ -1,7 +1,9 @@
 include user.cfg
 -include esp82xx/common.mf
 -include esp82xx/main.mf
+
 SRCS += user/pattern.c
+LIBS += pwm
 
 % :
 	$(warning This is the empty rule. Something went wrong.)
