@@ -14,7 +14,28 @@ int ICACHE_FLASH_ATTR CustomCommand(char * buffer, int retsize, char *pusrdata, 
     		buffend += ets_sprintf( buffend, "CC" );
     		return buffend-buffer;
     	} break;
-
+		case 'r': case 'R': { //Reconfigure RGB
+			int index = -1;
+			switch (pusrdata[2])
+			{
+				case 'r': case 'R': index = 0; break;
+				case 'g': case 'G': index = 1; break;
+				case 'b': case 'B': index = 2; break;
+				case 'y': case 'Y': index = 3; break;
+				default: break;
+			}
+			if( index >= 0 )
+			{
+				int val = safe_atoi( pusrdata+3 ); 
+				UsrCfg->rgbymapping[index] = val;
+	    		buffend += ets_sprintf( buffend, "CR %d %d\n", index, val );
+			}
+			else
+			{
+	    		buffend += ets_sprintf( buffend, "CR %d %d %d %d\n", UsrCfg->rgbymapping[0], UsrCfg->rgbymapping[1], UsrCfg->rgbymapping[2], UsrCfg->rgbymapping[3] );
+			}
+			return buffend - buffer;
+		} break;
     	case 'l': case 'L': { //LEDs
     		int i, it = 0;
     		buffend += ets_sprintf( buffend, "CL:%d:", UsrCfg->nled );

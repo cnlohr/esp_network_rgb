@@ -8,6 +8,7 @@
 typedef struct {
     uint8_t ptrn;    ///< Pattern to display on connected leds
     uint16_t nled;   ///< Number of connected LEDs
+	uint8_t rgbymapping[4];
     uint8_t clr[3];  ///< Color data (used for PATTERN_CONST)
     // ... add more here ...
 } __attribute__((__packed__)) usr_conf_t;

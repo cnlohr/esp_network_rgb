@@ -45,11 +45,16 @@ static void ICACHE_FLASH_ATTR procTask(os_event_t *events)
 
 void ws2812_push( uint8_t * data, int count )
 {
-		pwm_set_duty(data[0]<<7, 0);
-		pwm_set_duty(data[1]<<7, 1);
-		pwm_set_duty(data[2]<<7, 2);
-		pwm_set_duty(data[3]<<7, 3);
-		pwm_start();
+	uint16_t r = data[UsrCfg->rgbymapping[0]];
+	uint16_t g = data[UsrCfg->rgbymapping[1]];
+	uint16_t b = data[UsrCfg->rgbymapping[2]];
+	uint16_t y = data[UsrCfg->rgbymapping[3]];
+
+	pwm_set_duty(r<<7, 0);
+	pwm_set_duty(g<<7, 1);
+	pwm_set_duty(b<<7, 2);
+	pwm_set_duty(y<<7, 3);
+	pwm_start();
 }
 
 //Display pattern on connected LEDs
@@ -124,13 +129,13 @@ udpserver_recv(void *arg, char *pusrdata, unsigned short len)
     UsrCfg->ptrn = PTRN_NONE;
 	struct espconn *pespconn = (struct espconn *)arg;
 
-	uart0_sendStr("X");
+	//uart0_sendStr("X");
 
 	ws2812_push( pusrdata+3, len-3 );
 
 	len -= 3;
-	if( len > sizeof(last_leds) + 3 )
-		len = sizeof(last_leds) + 3;
+	if( len > sizeof(last_leds) )
+		len = sizeof(last_leds);
 	ets_memcpy( last_leds, pusrdata+3, len );
 	UsrCfg->nled = len / 3;
 }
